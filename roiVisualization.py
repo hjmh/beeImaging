@@ -9,8 +9,9 @@ roiData = {
     'slctframes': slct_frames,
     'fpv': fpv
     'numRoi': len(rois)
-    'roiTS': time series of raw average of points in roi
-    'roiPts: points defining outline of roi
+    'Fraw': time series of raw average of points in roi
+    'DFF': time series of delta F/F in roi
+    'Pts: points defining outline of roi
 }
 
 install shapely (pip install shapely) and descartes (pip install descartes) 
