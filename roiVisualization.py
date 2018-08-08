@@ -1,29 +1,71 @@
-"""Functions related to visulizing ROIs drawn in Ca-imaging data"""
-# Assumes that ROI data is saved in dictionary as generated in 'AnalyzeImaging notebook
+"""Functions related to visulizing ROIs drawn in Ca-imaging data
+
+Assumes that ROI data is saved in dictionary (as generated in 'AnalyzeImaging' notebook)
+
+roiData = {
+    'imgData': rawtiff,
+    'img': refimg,
+    'numframes': slct_numframes,
+    'slctframes': slct_frames,
+    'fpv': fpv
+    'numRoi': len(rois)
+    'roiTS': time series of raw average of points in roi
+    'roiPts: points defining outline of roi
+}
+
+install shapely (pip install shapely) and descartes (pip install descartes) 
+
+"""
 
 from matplotlib import pyplot as plt
 import numpy as np
 
-def illustrateRois(roidat):
-    from scipy.spatial import ConvexHull
 
-    roifig, axs = plt.subplots(nrows=1,ncols=2, figsize=(15,8))
-    
-    axs[0].imshow(roidat['img'], 'gray')
-    axs[1].imshow(roidat['img'], 'gray')
-    
-    for i in np.arange(0,roidat['numRoi']):
-        xr = roidat['roiShapes'][i][0]
-        yr = roidat['roiShapes'][i][1]
-       
-        points = np.zeros((len(xr),2))
-        points[:,0] = yr; points[:,1] = xr
-        hull = ConvexHull(points)
+# axis beautification
+def myAxisTheme(myax):
+    myax.get_xaxis().tick_bottom()
+    myax.get_yaxis().tick_left()
+    myax.spines['top'].set_visible(False)
+    myax.spines['right'].set_visible(False)
 
-        axs[0].text(yr[0], xr[0], 'roi'+str(i+1), color='w', fontsize=10)
-        axs[0].plot(points[hull.vertices,0], points[hull.vertices,1], 'r', lw=1)
-        axs[1].text(yr[0], xr[0], 'roi'+str(i+1), color='w', fontsize=10)
-        axs[1].scatter(roidat['roiShapes'][i][1],roidat['roiShapes'][i][0],alpha=0.07,
-                       marker='.', edgecolors='none')
+
+def illustrateRoiOutline(roidat, ax, roicmap, title):
+    from shapely.geometry.polygon import LinearRing
     
-    return roifig
+    ax.imshow(roidat['img'].T,cmap='Greys_r', vmin=0, origin='upper')
+    
+    for i, roi in enumerate(roidat['Pts']):
+        roiOutl = LinearRing(roi)
+        xr, yr = roiOutl.coords.xy
+        ax.plot(xr, yr, color=roicmap.to_rgba(i), lw=2)
+        ax.text(xr[0], yr[0], 'roi'+str(i+1), color='w', fontsize=10)
+    
+    ax.set_title(title)
+    return ax
+
+def illustrateRoiArea(roidat, ax, roicmap, title):
+    from shapely.geometry.polygon import Polygon
+    from descartes import PolygonPatch
+    
+    ax.imshow(roidat['img'].T,cmap='Greys_r', vmin=0, origin='upper')
+    
+    for i, roi in enumerate(roidat['Pts']):
+        roiArea = Polygon(roi)
+        
+        roipatch = PolygonPatch(roiArea,alpha=0.7, color=roicmap.to_rgba(i))
+        ax.add_patch(roipatch)
+        
+        ax.text(roi[0,0], roi[0,1], 'roi'+str(i+1), color='w', fontsize=10)
+    ax.set_title(title)
+    return ax
+
+
+def illustrateRoiTrace(roidat, ax, roicmap, framerange, xlab, ylab, title):
+    
+    for i in range(roidat['numRoi']):
+        ax.plot(roidat['DFF'][framerange,i],'-', color=roicmap.to_rgba(i))
+    ax.set_xlabel(xlab)
+    ax.set_ylabel(ylab)
+    
+    ax.set_title(title)
+    return ax
